@@ -1,34 +1,77 @@
-# ES to Pinecone Transfer Pipeline
+# ES to Pinecone
 
-A Python package for transferring documents from Elasticsearch to Pinecone with threading support for faster operations.
+[![PyPI version](https://badge.fury.io/py/es-to-pinecone.svg)](https://badge.fury.io/py/es-to-pinecone)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A Python package for efficiently transferring documents from Elasticsearch to Pinecone with vector embeddings and threading support.
+
+<p align="center">
+  <img src="docs/images/architecture.png" alt="ES to Pinecone Architecture" width="800">
+</p>
+
+## Overview
+
+ES to Pinecone bridges the gap between traditional search engines (Elasticsearch) and vector databases (Pinecone), enabling semantic search capabilities. The pipeline extracts documents from Elasticsearch, generates vector embeddings using providers like OpenAI or HuggingFace, and uploads them to Pinecone.
 
 ## Features
 
-- Transfer documents from Elasticsearch to Pinecone with minimal configuration
-- Support for multiple embedding providers (OpenAI, HuggingFace)
-- Multi-threaded processing for faster operations
-- Configurable batch sizes and field selection
-- Progress tracking with tqdm
-- Comprehensive error handling
+- **Simple Configuration**: Minimal setup required through environment variables or direct configuration
+- **Multiple Embedding Providers**: Support for OpenAI, HuggingFace, and custom embedding generators
+- **Multi-threaded Processing**: Parallel processing for significantly faster operations
+- **Flexible Field Selection**: Choose which document fields to embed and include as metadata
+- **Progress Tracking**: Built-in progress visualization with tqdm and custom callbacks
+- **Robust Error Handling**: Comprehensive exception handling and detailed logging
+- **Dry Run Mode**: Test configuration without writing to Pinecone
 
 ## Installation
 
 ```bash
-pip install es-to-pinecone-transfer
+pip install es-to-pinecone
 ```
 
 ## Quick Start
 
-1. Create a `.env` file with your configuration (see `.env.example` for reference)
+1. Create a `.env` file with your configuration:
 
-2. Use the pipeline directly in your code:
+```
+# Elasticsearch Configuration
+ES_HOST=http://localhost:9200
+ES_USERNAME=elastic
+ES_PASSWORD=changeme
+ES_INDEX=your_index
+
+# Embedding Configuration
+EMBEDDING_TYPE=openai
+OPENAI_API_KEY=your_openai_key
+OPENAI_MODEL=text-embedding-ada-002
+
+# Pinecone Configuration
+PINECONE_API_KEY=your_pinecone_key
+PINECONE_ENVIRONMENT=us-west1-gcp
+PINECONE_INDEX_NAME=your_pinecone_index
+
+# Pipeline Configuration
+BATCH_SIZE=100
+MAX_THREADS=5
+FIELDS_TO_EMBED=title,content
+METADATA_FIELDS=author,date,url
+DEFAULT_NAMESPACE=default
+```
+
+2. Use the pipeline in your code:
 
 ```python
 from es_to_pinecone_transfer.pipeline import ElasticsearchToPineconePipeline
 
-# Initialize and run the pipeline
+# Initialize the pipeline
 pipeline = ElasticsearchToPineconePipeline()
-pipeline.run()
+
+# Run the pipeline
+stats = pipeline.run()
+
+print(f"Processed: {stats['processed']} documents")
+print(f"Upserted: {stats['upserted']} documents")
+print(f"Failed: {stats['failed']} documents")
 ```
 
 3. Or use the command-line interface:
@@ -37,71 +80,80 @@ pipeline.run()
 es-to-pinecone
 ```
 
-## Configuration
+## Documentation
 
-The pipeline can be configured using environment variables. Here are the key settings:
+Comprehensive documentation is available in the [docs directory](docs/):
 
-### Elasticsearch Configuration
-- `ES_HOST`: Elasticsearch host URL
-- `ES_USERNAME`: Elasticsearch username (optional)
-- `ES_PASSWORD`: Elasticsearch password (optional)
-- `ES_API_KEY`: Elasticsearch API key (optional, preferred over username/password)
-- `ES_INDEX`: Source index name
+- [Configuration Options](docs/configuration.md): All available configuration settings
+- [Usage Examples](docs/examples.md): Detailed usage examples
+- [API Reference](docs/api.md): Complete API documentation
+- [Troubleshooting](docs/troubleshooting.md): Solutions for common issues
 
-### Embedding Configuration
-- `EMBEDDING_TYPE`: Type of embedding to use (openai/huggingface/custom)
-- `OPENAI_API_KEY`: OpenAI API key (if using OpenAI embeddings)
-- `OPENAI_MODEL`: OpenAI model to use for embeddings
-- `HUGGINGFACE_MODEL`: HuggingFace model to use (if using HuggingFace)
+## Example Scripts
 
-### Pinecone Configuration
-- `PINECONE_API_KEY`: Pinecone API key
-- `PINECONE_ENVIRONMENT`: Pinecone environment
-- `PINECONE_INDEX_NAME`: Target Pinecone index name
+Ready-to-use example scripts are available in the [examples directory](examples/):
 
-### Pipeline Configuration
-- `BATCH_SIZE`: Number of documents to process in each batch
-- `MAX_THREADS`: Maximum number of threads to use
-- `FIELDS_TO_EMBED`: Comma-separated list of fields to embed from ES documents
-- `METADATA_FIELDS`: Comma-separated list of fields to include as metadata
-- `DEFAULT_NAMESPACE`: Pinecone namespace to use
+- [basic_transfer.py](examples/basic_transfer.py): Simple document transfer
+- [advanced_transfer.py](examples/advanced_transfer.py): Advanced usage with progress tracking and filtering
+- [semantic_search.py](examples/semantic_search.py): Perform semantic search with the transferred vectors
 
 ## Advanced Usage
+
+### Filtering Documents with a Query
+
+```python
+# Define a query to filter documents
+query = {
+    "bool": {
+        "must": [
+            {"match": {"status": "published"}},
+            {"range": {"published_date": {"gte": "2023-01-01"}}}
+        ]
+    }
+}
+
+# Run the pipeline with the query
+stats = pipeline.run(query=query)
+```
 
 ### Custom Field Mapping
 
 ```python
-from es_to_pinecone_transfer.pipeline import ElasticsearchToPineconePipeline
-
-pipeline = ElasticsearchToPineconePipeline()
+# Set field mapping
 pipeline.set_field_mapping({
-    'title': 'headline',
-    'content': 'body',
-    'author': 'writer',
-    'timestamp': 'date'
+    'title': 'document_title',
+    'content': 'document_content',
+    'author': 'author_name'
 })
-pipeline.run()
 ```
 
-### Progress Callbacks
+### Progress Tracking
 
 ```python
-def on_batch_complete(batch_number, total_batches):
-    print(f"Completed batch {batch_number} of {total_batches}")
+# Define a progress callback
+def progress_callback(current_batch, total_batches):
+    percent = (current_batch / total_batches) * 100
+    print(f"Progress: {current_batch}/{total_batches} ({percent:.2f}%)")
 
-pipeline = ElasticsearchToPineconePipeline()
-pipeline.set_progress_callback(on_batch_complete)
-pipeline.run()
+# Set the progress callback
+pipeline.set_progress_callback(progress_callback)
 ```
 
 ## Error Handling
 
-The pipeline provides comprehensive error handling:
-
 ```python
+from es_to_pinecone_transfer.exceptions import (
+    ElasticsearchConnectionError,
+    PineconeConnectionError,
+    EmbeddingError,
+    ConfigurationError
+)
+
 try:
     pipeline = ElasticsearchToPineconePipeline()
-    pipeline.run()
+    stats = pipeline.run()
+except ConfigurationError as e:
+    print(f"Configuration error: {e}")
 except ElasticsearchConnectionError as e:
     print(f"Elasticsearch connection failed: {e}")
 except PineconeConnectionError as e:
@@ -112,10 +164,25 @@ except Exception as e:
     print(f"Unexpected error: {e}")
 ```
 
+## Architecture
+
+The pipeline consists of these main components:
+
+1. **ElasticsearchClient**: Extracts documents from Elasticsearch
+2. **Embedding Generators**: Convert text to vector embeddings
+3. **PineconeClient**: Uploads vectors to Pinecone
+4. **Pipeline Coordinator**: Manages the transfer process with threading
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

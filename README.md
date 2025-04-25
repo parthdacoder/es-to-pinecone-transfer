@@ -1,4 +1,4 @@
-# ES to Pinecone
+# ES to Pinecone Transfer
 
 [![PyPI version](https://badge.fury.io/py/es-to-pinecone.svg)](https://badge.fury.io/py/es-to-pinecone-transfer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

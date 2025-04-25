@@ -1,0 +1,2 @@
+[console_scripts]
+es-to-pinecone = es_to_pinecone_transfer.pipeline:main

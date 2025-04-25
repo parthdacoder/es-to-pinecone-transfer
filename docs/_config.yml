@@ -1,0 +1,21 @@
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-relative-links
+
+title: ES to Pinecone
+description: A threaded pipeline for transferring documents from Elasticsearch to Pinecone with vector embeddings
+show_downloads: true
+
+# Navigation
+header_pages:
+  - index.md
+  - configuration.md
+  - examples.md
+  - api.md
+  - troubleshooting.md
+
+# Enable relative links
+relative_links:
+  enabled: true
+  collections: true

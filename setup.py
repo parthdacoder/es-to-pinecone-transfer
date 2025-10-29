@@ -16,8 +16,8 @@ requirements = [
 setup(
     name="es-to-pinecone-transfer",
     version="0.1.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Parth Madaan",
+    author_email="parthmadaan2002@gmail.com",
     description="A pipeline to transfer documents from Elasticsearch to Pinecone with threading support",
     long_description=long_description,
     long_description_content_type="text/markdown",
